@@ -1,4 +1,5 @@
 const Appointment = require("../models/Appointment");
+const Trainer = require("../models/Trainer");
 
 const createAppointment = async (req, res) => {
   try {
@@ -16,6 +17,7 @@ const createAppointment = async (req, res) => {
       date,
       time,
       note,
+      status: "Pending",
     });
 
     res.status(201).json({
@@ -31,7 +33,8 @@ const getMyAppointments = async (req, res) => {
   try {
     const appointments = await Appointment.find({ member: req.user._id })
       .populate("trainer")
-      .populate("member", "name email phone role");
+      .populate("member", "name email phone role profileImage")
+      .sort({ createdAt: -1 });
 
     res.status(200).json(appointments);
   } catch (error) {
@@ -41,9 +44,22 @@ const getMyAppointments = async (req, res) => {
 
 const getTrainerAppointments = async (req, res) => {
   try {
-    const appointments = await Appointment.find()
-      .populate("member", "name email phone role")
-      .populate("trainer");
+    const trainerProfile = await Trainer.findOne({
+      email: req.user.email,
+    });
+
+    if (!trainerProfile) {
+      return res.status(404).json({
+        message: "Trainer profile not found",
+      });
+    }
+
+    const appointments = await Appointment.find({
+      trainer: trainerProfile._id,
+    })
+      .populate("member", "name email phone role profileImage")
+      .populate("trainer")
+      .sort({ createdAt: -1 });
 
     res.status(200).json(appointments);
   } catch (error) {
@@ -54,8 +70,9 @@ const getTrainerAppointments = async (req, res) => {
 const getAllAppointments = async (req, res) => {
   try {
     const appointments = await Appointment.find()
-      .populate("member", "name email phone role")
-      .populate("trainer");
+      .populate("member", "name email phone role profileImage")
+      .populate("trainer")
+      .sort({ createdAt: -1 });
 
     res.status(200).json(appointments);
   } catch (error) {
@@ -78,7 +95,7 @@ const updateAppointmentStatus = async (req, res) => {
       { status },
       { new: true }
     )
-      .populate("member", "name email phone role")
+      .populate("member", "name email phone role profileImage")
       .populate("trainer");
 
     if (!appointment) {

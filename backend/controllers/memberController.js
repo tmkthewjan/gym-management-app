@@ -10,7 +10,7 @@ const createMember = async (req, res) => {
     res.status(201).json({
       message: "Member profile created successfully",
       member,
-    });
+    }); 
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
